@@ -2,30 +2,17 @@
 
 class DESEncryption:
     def __init__(self):
+        pass
 
-        self.s_boxes = [
-            [
-                # S box 1
-                ['101', '010', '001', '110', '011', '100', '111', '000'],
-                ['001', '100', '110', '010', '000', '111', '101', '011']
-            ],
-            [
-                # S box 2
-                ['100', '000', '110', '101', '111', '001', '011', '010'],
-                ['101', '011', '000', '111', '110', '010', '001', '100']
-            ]
-        ]
-
-        self.key = '011001010'
-
-    def encrypt(self, message, iterations):
+    def encrypt(self, initial_message):
         # Given a 12 bit message, return the encrypted equivalent
         # Input should not have 0b at the start. We will add this at the final result
         iteration = 0
+        message = self.initial_permutation(initial_message)
         middle_index = len(message)/2
         left_bits = message[0:middle_index]
         right_bits = message[middle_index:]
-        while iteration < iterations:
+        while iteration < 16:
             f_calculation = self.f_function(right_bits, self.get_key(iteration))
             temp = left_bits
             left_bits = right_bits
@@ -33,29 +20,46 @@ class DESEncryption:
             while len(right_bits) < middle_index:
                 right_bits = '0' + right_bits
             iteration += 1
-        return left_bits + right_bits
+        message = left_bits + right_bits
+        final_message = self.final_permutation(message)
+        return final_message
 
     def f_function(self, right_input, key):
         # First convert the 6-bit input into an 8 bit string
-        new_right_input = '0b' + self.e_function(right_input)
+        new_right_input = '0b' + self.expansion_permutation(right_input)
         # Complete the XOR operation and remove the binary identifier
         xor_result = bin(int(new_right_input, 2) ^ int('0b' + key, 2))[2:]
-        # S-Box lookup
-        function_result = \
-            self.s_boxes[0][int(xor_result[0], 2)][int(xor_result[1:4], 2)] + \
-            self.s_boxes[1][int(xor_result[4], 2)][int(xor_result[5:8], 2)]
+
+        # Parse xor_result into an array of 6 bit
+        bit_array = []
+        for count in range(0, 8):
+            bit_array.append(xor_result[count*6:(count+1)*6 - 1])
+
+        # S-Box
+        # Changed with the expansions to support 64-bit encryption
+        function_result = ''
+        for index in range(0, len(bit_array)):
+            row = int('0b' + bit_array[index][0:2], 2)
+            column = int('0b' + bit_array[index][2:], 2)
+            function_result += self.s_box_lookup(index, row, column)
+
         # Returns bits without 0b
         return function_result
 
-    def e_function(self, input_to_manipulate):
-        input_to_use = '{0}{1}{2}{3}{4}'.format(
-            input_to_manipulate[0:2],
-            input_to_manipulate[3],
-            input_to_manipulate[2:4],
-            input_to_manipulate[2],
-            input_to_manipulate[4:6])
-        # returns bits without 0b
-        return input_to_use
+    def s_box_lookup(self, box_number, row, column):
+        s_box_file = open('S_{0}.txt'.format(box_number), 'r')
+        s_box = []
+        for line in s_box_file:
+            temp = []
+            for index in line.split(' '):
+                temp.append(int(index))
+            s_box.append(temp)
+        s_box_file.close()
+
+        bits = bin(s_box[row][column])[2:]
+        while len(bits) < 4:
+            bits = '0' + bits
+        return bits
 
     def get_key(self, iteration):
         # Get the key matching the given iteration we are on
@@ -64,7 +68,10 @@ class DESEncryption:
             key_to_return += self.key[iteration % len(self.key)]
             iteration += 1
         # Returns bits without 0b
-        return key_to_return
+        # return key_to_return
+
+
+
 
     def initial_permutation(self, message):
         # Calculates the initial permutation of the given message
