@@ -8,7 +8,7 @@ def main():
     final_message = encryption.encrypt(message)
     print "\n\nInitial Message: {0}".format(message)
     print "Initial Key: {0}".format(encryption.key)
-    print "Final Message: {0}".format(final_message)
+    print "Cipher Text: {0}".format(final_message)
 
 
 # def test_encryption():

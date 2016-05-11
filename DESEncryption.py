@@ -33,7 +33,10 @@ class DESEncryption:
             right_bits = bin(int('0b' + temp, 2) ^ int('0b' + f_calculation, 2))[2:]
             while len(right_bits) < middle_index:
                 right_bits = '0' + right_bits
+            if self.iteration == 0:
+                print "R_1: {0}".format(right_bits)
             self.iteration += 1
+
         message = left_bits + right_bits
         final_message = self.final_permutation(message)
         return final_message
@@ -60,8 +63,9 @@ class DESEncryption:
             column = int('0b' + bit_array[index][1:5], 2)
             temp = self.s_box_lookup(index, row, column)
             function_result += temp
-            s_box_operations.append([index, row, column, int('0b' + temp,2)])
+            s_box_operations.append([index, row, column, temp])
             index += 1
+        temp = function_result
         function_result = self.permutation_function(function_result)
         # Returns bits without 0b
         if self.iteration == 0:
@@ -73,7 +77,8 @@ class DESEncryption:
                     s_box_operations[count][1],
                     s_box_operations[count][2],
                     s_box_operations[count][3])
-            print "Concatenated Result: {0}".format(function_result)
+            print "B: {0}".format(temp)
+            print "P(B): {0}".format(function_result)
         return function_result
 
     def s_box_lookup(self, box_number, row, column):
